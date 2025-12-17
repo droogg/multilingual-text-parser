@@ -155,6 +155,8 @@ class TextModifier(BaseRawTextProcessor):
         self._preliminary_correction_2 = re.compile(r"([a-zA-Zа-яёА-ЯЁ])\+([\d])")
         self._preliminary_correction_3 = re.compile(r"([a-zA-Zа-яёА-ЯЁ])([\d])")
         self._preliminary_correction_4 = re.compile(r"([\d])([a-zA-Zа-яёА-ЯЁ])")
+        self._unit_guard = re.compile(r"(?i)([mм])([23²³])")
+        self._unit_guard_placeholder = "\uFFF0"
         self._preliminary_correction_5 = re.compile(r"(\s+)([№$€¥£₽])(\s+)([\d\.,]+)")
         self._preliminary_correction_6 = re.compile(r"([\d\.,]+)(\s+)([%°$€¥£₽])(\s+)")
         self._remove_url = re.compile(
@@ -177,12 +179,15 @@ class TextModifier(BaseRawTextProcessor):
         collect_ssml(doc)
 
         _str = " " + doc.text.strip() + " "
+        _str = _str.replace("\n", " ").replace("\r", " ")
         _str = _str.replace("USD", "$").replace("EUR", "€")
 
         _str = self._preliminary_correction_1.sub("", _str)
+        _str = self._unit_guard.sub(rf"\1{self._unit_guard_placeholder}\2", _str)
         _str = self._preliminary_correction_2.sub(r"\1 \2", _str)
         _str = self._preliminary_correction_3.sub(r"\1 \2", _str)
         _str = self._preliminary_correction_4.sub(r"\1 \2", _str)
+        _str = _str.replace(self._unit_guard_placeholder, "")
         _str = self._preliminary_correction_5.sub(r"\1\2\4 ", _str)
         _str = self._preliminary_correction_6.sub(r"\1\3\4", _str)
         _str = self._remove_url.sub("", _str)
